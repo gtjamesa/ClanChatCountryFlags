@@ -28,8 +28,12 @@ import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import javax.inject.Inject;
+
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.EnumComposition;
+import net.runelite.api.EnumID;
 import net.runelite.api.GameState;
 import net.runelite.api.IndexedSprite;
 import net.runelite.api.events.GameStateChanged;
@@ -73,6 +77,9 @@ public class WorldFlagsPlugin extends Plugin
 		return configManager.getConfig(WorldFlagsConfig.class);
 	}
 
+	@Getter
+	private EnumComposition worldLocations;
+
 	@Override
 	protected void startUp() throws Exception
 	{
@@ -102,6 +109,15 @@ public class WorldFlagsPlugin extends Plugin
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 		{
 			clientThread.invoke(this::loadRegionIcons);
+		}
+
+		if (client.getGameState().getState() >= GameState.LOGIN_SCREEN.getState())
+		{
+			clientThread.invokeLater(() -> worldLocations = client.getEnum(EnumID.WORLD_LOCATIONS));
+		}
+		else
+		{
+			worldLocations = null;
 		}
 	}
 
@@ -231,7 +247,10 @@ public class WorldFlagsPlugin extends Plugin
 			}
 
 			final int worldRegionId = targetPlayerWorld.getLocation(); // 0 - us, 1 - gb, 3 - au, 7 - de
-			final int regionModIconId = WorldRegionFlag.getByRegionId(worldRegionId).ordinal() + modIconsStart;
+			final int locationId = worldLocations != null ? worldLocations.getIntValue(worldNumber) : -1;
+			final int regionModIconId = WorldRegionFlag.getByRegionId(worldRegionId, locationId).ordinal() + modIconsStart;
+
+			log.debug("World {} is in region {} ({})", worldNumber, worldRegionId, locationId);
 
 			listWidget.setText(worldString + " <img=" + (regionModIconId) + ">");
 		}

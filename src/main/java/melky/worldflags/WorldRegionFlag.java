@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.http.api.worlds.WorldRegion;
 
 enum WorldRegionFlag
 {
@@ -35,11 +36,17 @@ enum WorldRegionFlag
 	FLAG_US(0),
 	FLAG_GB(1),
 	FLAG_AU(3),
-	FLAG_DE(7);
+	FLAG_DE(7),
+	// World locations (within a region)
+	FLAG_USE(-42),
+	FLAG_USW(-73);
 
 	private static final Map<Integer, WorldRegionFlag> worldRegionMap;
 
 	private final int regionId;
+
+	private static final int LOCATION_US_EAST = -42;
+	private static final int LOCATION_US_WEST = -73;
 
 	static
 	{
@@ -66,4 +73,21 @@ enum WorldRegionFlag
 	{
 		return worldRegionMap.get(regionId);
 	}
+
+    static WorldRegionFlag getByRegionId(int regionId, int worldLocation) {
+        WorldRegion region = WorldRegion.valueOf(regionId);
+
+        if (region == WorldRegion.UNITED_STATES_OF_AMERICA) {
+            switch (worldLocation) {
+                case LOCATION_US_EAST:
+                    return WorldRegionFlag.FLAG_USE;
+                case LOCATION_US_WEST:
+                    return WorldRegionFlag.FLAG_USW;
+                default:
+                    return WorldRegionFlag.FLAG_US;
+            }
+        }
+
+        return worldRegionMap.get(regionId);
+    }
 }
